@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://127.0.0.1:27017/miniproject');
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/miniproject';
+
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("MongoDB Connection Error:", err));
 
 const userSchema = mongoose.Schema({
     username: String,
@@ -7,7 +12,6 @@ const userSchema = mongoose.Schema({
     age: Number,
     email: String,
     password: String,
-    
     posts: [
         {
             type: mongoose.Schema.Types.ObjectId, 

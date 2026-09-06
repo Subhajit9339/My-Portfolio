@@ -1,22 +1,24 @@
 const express = require('express');
 const app = express();
+const path = require('path');
 
 const userModel = require("./models/user");
 const postModel = require("./models/post");
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 
-const path = require('path');
-
+// 1. View engine & Static files configuration
+app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
+app.use(express.static(path.join(__dirname, "public")));
 
+// 2. Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
+// 3. Routes (MUST BE DEFINED BEFORE EXPORT)
 
 // Home
 app.get('/', (req, res) => {
@@ -27,13 +29,10 @@ app.get('/test', (req, res) => {
     res.render('test');
 });
 
-
-
 // Login page
 app.get('/login', (req, res) => {
     res.render('login');
 });
-
 
 // Profile
 app.get('/profile', isLoggedIn, async (req, res) => {
@@ -45,7 +44,6 @@ app.get('/profile', isLoggedIn, async (req, res) => {
         res.status(500).send("Something went wrong");
     }
 });
-
 
 // Create Post
 app.post('/post', isLoggedIn, async (req, res) => {
@@ -69,7 +67,6 @@ app.post('/post', isLoggedIn, async (req, res) => {
     }
 });
 
-
 // Like / Unlike toggle
 app.get('/like/:id', isLoggedIn, async (req, res) => {
     try {
@@ -90,14 +87,12 @@ app.get('/like/:id', isLoggedIn, async (req, res) => {
     }
 });
 
-
-// Render the edit page with the post data
+// Render edit page
 app.get('/edit/:id', isLoggedIn, async (req, res) => {
     try {
         let post = await postModel.findById(req.params.id);
         if (!post) return res.status(404).send("Post not found");
 
-        // only the owner can edit
         if (post.user.toString() !== req.user.userid) {
             return res.status(403).send("Not authorized");
         }
@@ -109,8 +104,7 @@ app.get('/edit/:id', isLoggedIn, async (req, res) => {
     }
 });
 
-
-// Handle the edit form submission (was missing — edit.ejs posts here)
+// Handle edit submission
 app.post('/update/:id', isLoggedIn, async (req, res) => {
     try {
         let post = await postModel.findById(req.params.id);
@@ -130,8 +124,7 @@ app.post('/update/:id', isLoggedIn, async (req, res) => {
     }
 });
 
-
-// Delete a post (was missing — profile.ejs links here)
+// Delete a post
 app.get('/delete/:id', isLoggedIn, async (req, res) => {
     try {
         let post = await postModel.findById(req.params.id);
@@ -153,7 +146,6 @@ app.get('/delete/:id', isLoggedIn, async (req, res) => {
         res.status(500).send("Something went wrong");
     }
 });
-
 
 // Register
 app.post('/register', async (req, res) => {
@@ -199,7 +191,6 @@ app.post('/register', async (req, res) => {
     }
 });
 
-
 // Login
 app.post('/login', async (req, res) => {
     try {
@@ -231,13 +222,11 @@ app.post('/login', async (req, res) => {
     }
 });
 
-
 // Logout
 app.get('/logout', (req, res) => {
     res.cookie('token', '');
     res.redirect('/login');
 });
-
 
 // Authentication middleware
 function isLoggedIn(req, res, next) {
@@ -254,7 +243,10 @@ function isLoggedIn(req, res, next) {
     }
 }
 
-
-app.listen(3000, () => {
-    console.log("Server running on port 3000");
+// 4. Start local listener AND export for Vercel
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
+
+module.exports = app;
